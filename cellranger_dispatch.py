@@ -16,12 +16,13 @@ import sys
 import textwrap
 
 class RNA_Pipeline_Run:
-	def __init__(self, input_dir, root, sample_csv_file, task, genome, debug):
+	def __init__(self, input_dir, root, sample_csv_file, build_fastqs, task, genome, debug):
 
 		self.input_dir = os.path.join('/oak/stanford/projects/genomics/labs/mfischbe', input_dir)
 		#self.root_dir = os.path.join('/oak/stanford/groups/willhies/rna_seq_rawdata', root)
 		self.root_dir = root
 		self.sample_csv_file = os.path.join(os.getcwd(),sample_csv_file)
+		self.build_fastqs = build_fastqs
 		self.task = task
 		self.genome = os.path.join('$OAK/ref_genomes', genome)
 
@@ -206,28 +207,36 @@ class RNA_Pipeline_Run:
 
 		print('Directory structure created')
 
-		os.chdir(self.root_dir)
-		mkfastq_command = 'cellranger mkfastq --id="{mkfastq_dir}"' \
-					' --run="{main_folder}"' \
-					' --csv="{sample_csv_file}"'\
-					' --jobmode="local"' \
-					' --rc-i2-override=True'.format(
-						mkfastq_dir=self.mkfastq_dir,
-						main_folder=self.root_dir,
-						sample_csv_file=self.sample_csv_file
-					)
-		
-		print(mkfastq_command)
+		if self.build_fastqs is True:
+			os.chdir(self.root_dir)
+			mkfastq_command = 'cellranger mkfastq --id="{mkfastq_dir}"' \
+						' --run="{main_folder}"' \
+						' --csv="{sample_csv_file}"'\
+						' --jobmode="local"' \
+						' --rc-i2-override=True'.format(
+							mkfastq_dir=self.mkfastq_dir,
+							main_folder=self.root_dir,
+							sample_csv_file=self.sample_csv_file
+						)
+			
+			print(mkfastq_command)
 
-		bcl2fastq_load = 'module load biology bcl2fastq'
-		p = subprocess.Popen('{cmd1};{cmd2}'.format(cmd1=bcl2fastq_load, cmd2=mkfastq_command), shell=True)
-		streamdata = p.communicate()[1]
-		
-		if p.returncode != 0:
-			print(f'{bcolors.ERR}Fastq generation FAILED{bcolors.ENDC}')
-			sys.exit()
+			bcl2fastq_load = 'module load biology bcl2fastq'
+			p = subprocess.Popen('{cmd1};{cmd2}'.format(cmd1=bcl2fastq_load, cmd2=mkfastq_command), shell=True)
+			streamdata = p.communicate()[1]
+			
+			if p.returncode != 0:
+				print(f'{bcolors.ERR}Fastq generation FAILED{bcolors.ENDC}')
+				sys.exit()
+			else:
+				print(f'{bcolors.OK}Fastqs created!{bcolors.ENDC}')
 		else:
-			print(f'{bcolors.OK}Fastqs created!{bcolors.ENDC}')
+			if os.path.exists(os.path.join(self.root_dir, "fastq_path")):
+				print(os.path.join(self.root_dir, "fastq_path"))
+				print(f'{bcolors.OK}Fastqs available!{bcolors.ENDC}')
+				subprocess.call(f'mv {os.path.join(self.root_dir, "fastq_path")} {os.path.join(self.root_dir, self.mkfastq_dir, "outs")}', shell=True)
+			else:
+				print(f'{bcolors.OK}No fastqs avaialble in {os.path.join(root_dir,"fastq_path")},{bcolors.ENDC}')
 
 
 	def run(self):
@@ -268,6 +277,7 @@ if __name__ == '__main__':
 	parser.add_argument('-i', '--input_source', metavar='', required=True, help='Name of raw data dump folder on /oak/stanford/projects/genomics/labs/mfischbe')
 	parser.add_argument('-r', '--root_dir', metavar='', required=True, help='Full path to root data directory on OAK')
 	parser.add_argument('-s', '--sample_csv', metavar='', required=True, help='Name of samples.csv file in the correct format (save this in root_dir)')
+	parser.add_argument('-f', '--build_fastqs', metavar='', required=True, default=True, help='By default assumes no fastqs are built')
 	parser.add_argument('-g', '--genome', metavar='', required=True, help='Name of the genome eg: refdata-cellranger-mm10-3.0.0')
 	parser.add_argument('-t', '--task', metavar='', required=True, help='set as either "rna" or "atac"')
 	parser.add_argument('-d', '--debug', metavar='', required=False, default=False)
@@ -282,11 +292,12 @@ if __name__ == '__main__':
 	genome = args['genome']
 	task = args['task']
 	debug = args['debug']
+	build_fastqs = args['build_fastqs']
 
 	print(f'Using genome: {bcolors.BLUE}{genome}{bcolors.END}')
 	print(f'Processing experiment: {bcolors.BLUE}{task}{bcolors.END}')
 
-	rna_pipe = RNA_Pipeline_Run(input_dir, root_dir, sample_csv, task, genome, debug)
+	rna_pipe = RNA_Pipeline_Run(input_dir, root_dir, sample_csv, build_fastqs, task, genome, debug)
 
 	start_time = time.time()
 	
