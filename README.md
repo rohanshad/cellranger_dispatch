@@ -6,13 +6,27 @@ A somewhat fully contained "Fire and forget" python wrapper for single cell RNA 
 #### Installation and Setup
 
 Tested on Ubuntu 20.02 and CentOS7 
-These steps need to be done once. 
+These installation steps need to be done once. 
 
-1. If working on Sherlock the conda environments are already setup
+1. If working on Sherlock the conda environments are already setup for most users. 
 
 	```
 	source activate rnaseq
 	```
+
+	If that doesn't work you may need to add a line to your ```~/.bashrc``` file to link the lab anaconda installation to your local environment. Make the edits by entering:
+
+	```
+	vim ~/.bash rc
+	```
+	Hit 'i' in the keyboard and paste in this line:
+
+	```
+	export PATH="$GROUP_HOME/anaconda3/bin:$PATH"
+	```
+
+	Save by typing ```:wq``` in vim, this will write the changes and quit. Open a new terminal window and repeat step #1
+
 2. Install dependencies with pip (skip if on hiesinger sherlock partition)
 
 	```
@@ -23,7 +37,7 @@ These steps need to be done once.
 	```
 	vim ~/.bashrc
 	```
-	Hit 'i' on the keyboard and add these two lines somewhere:
+	Hit 'i' on the keyboard and add these two lines, and then enter ```:wq``` as described previously to save and quit when done.
 
 	```
 	export PATH="$GROUP_HOME/single_cell/cellranger-6.1.2:$PATH"
@@ -34,15 +48,24 @@ These steps need to be done once.
 
 #### Running cellranger_dispatch
 
-The program copies over data from the genome sequencing service center (Usually a folder within `"/oak/stanford/projects/genomics/labs/mfischbe"`) into our own `$OAK` or `$GROUP_SCRATCH` directory of choice. There after passing some checks and reading in the provided samples.csv file, the script will build FASTQ files using all available CPU cores. A separate batch submit script is generated for each sample, and dispatched to the SLURM job scheduler to run either atac or RNAseq alignment. All count matrices and job outputs are delivered to a folder on `$GROUP_SCRATCH` to a folder called `RNA_seq_outputs_{DD_MM_YY}`. 
+The program copies over data from an ***input_source*** (Usually a folder within `"/oak/stanford/projects/genomics/labs/mfischbe"` if using Stanford's genome sequencing service center) into our own `$OAK` or `$GROUP_SCRATCH` directory of choice (***root_dir***). There after passing some checks and reading in the provided samples.csv file, the script will build FASTQ files using all available CPU cores. A separate batch submit script is generated for each sample, and dispatched to the SLURM job scheduler to run either atac or RNAseq alignment. All count matrices and job outputs are delivered to a folder on `$GROUP_SCRATCH` to a folder called `RNA_seq_outputs_{MM_DD_YY}`. ***If your data is coming demultiplexed from an external company*** make sure all the fastqs are downloaded and stored inside a folder called ```fastq_path``` within your ```input_source``` directory. Create a dummy samples.csv file as such:
 
+```
+Lane,Sample,Index
+null,M11_Root,null
+null,M11_Arch,null
+null,M11_ASC,null 
+```
+
+Lane and Index can be whatever, but Sample must be the sample names used to identify the FASTQ files. For a FASTQ file called ```MF-LDS-ASC_S1_L004_I1_001.fastq.gz```, the sample name would thus be ```MF-LDS-ASC```
 
 The program takes requires the following arguments to run (```python cellranger_dispatch.py --help``` to see more)
 
 ```
-  -i , --input_source   Name of raw data dump folder on /oak/stanford/projects/genomics/labs/mfischbe
+  -i , --input_source   Name of raw data dump folder, for example: /oak/stanford/projects/genomics/labs/mfischbe
   -r , --root_dir       Full path to new data directory on $OAK or $GROUP_SCRATCH
   -s , --sample_csv     Name of samples.csv file in the correct format
+  -f , --build_fastqs		By default assumes fastqs are not avaialble and will generate fastqs from bcl files
   -g , --genome         Name of the genome eg: refdata-cellranger-mm10-3.0.0
   -t , --task           set as either "rna" or "atac"
   -d , --debug 			

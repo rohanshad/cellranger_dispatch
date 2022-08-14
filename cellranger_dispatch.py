@@ -18,8 +18,9 @@ import textwrap
 class RNA_Pipeline_Run:
 	def __init__(self, input_dir, root, sample_csv_file, build_fastqs, task, genome, debug):
 
-		self.input_dir = os.path.join('/oak/stanford/projects/genomics/labs/mfischbe', input_dir)
+		#self.input_dir = os.path.join('/oak/stanford/projects/genomics/labs/mfischbe', input_dir)
 		#self.root_dir = os.path.join('/oak/stanford/groups/willhies/rna_seq_rawdata', root)
+		self.input_dir = input_dir
 		self.root_dir = root
 		self.sample_csv_file = os.path.join(os.getcwd(),sample_csv_file)
 		self.build_fastqs = build_fastqs
@@ -46,7 +47,7 @@ class RNA_Pipeline_Run:
 				' --transcriptome={genome}' \
 				' --fastqs={fastqs}' \
 				' --sample={sample}' \
-				' --expect-cells=10000'.format(
+				' --expect-cells=10000'.format(alex_dalal_tutorial_se│···?q
 					sample = sample,
 					genome = self.genome,
 					fastqs = os.path.join(self.root_dir,self.mkfastq_dir,'outs','fastq_path')
@@ -54,8 +55,8 @@ class RNA_Pipeline_Run:
 		copy_outputs = textwrap.dedent(f'''\
 			
 			echo "Moving to GROUP_SCRATCH"
-			mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%d_%m_%y")}/
-			mv $GROUP_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%d_%m_%y")}/
+			mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+			mv $GROUP_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
 
 			echo "Job copied, waiting 10s to terminate..."
 
@@ -93,8 +94,8 @@ class RNA_Pipeline_Run:
 
 			echo "Copying back to GROUP_SCRATCH"
 
-			mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%d_%m_%y")}/
-			cp -r $L_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%d_%m_%y")}/
+			mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+			cp -r $L_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
 
 			echo "Job copied, waiting 10s to terminate..."
 
@@ -234,7 +235,9 @@ class RNA_Pipeline_Run:
 			if os.path.exists(os.path.join(self.root_dir, "fastq_path")):
 				print(os.path.join(self.root_dir, "fastq_path"))
 				print(f'{bcolors.OK}Fastqs available!{bcolors.ENDC}')
-				subprocess.call(f'mv {os.path.join(self.root_dir, "fastq_path")} {os.path.join(self.root_dir, self.mkfastq_dir, "outs")}', shell=True)
+				
+				#os.makedirs(os.path.join(self.root_dir, self.mkfastq_dir, "outs"))
+				subprocess.call(f'rsync -azhv {os.path.join(self.root_dir, "fastq_path")} {os.path.join(self.root_dir, self.mkfastq_dir, "outs", "fastq_path")}', shell=True)
 			else:
 				print(f'{bcolors.OK}No fastqs avaialble in {os.path.join(root_dir,"fastq_path")},{bcolors.ENDC}')
 
@@ -274,7 +277,7 @@ if __name__ == '__main__':
 		epilog="Version 1.0; Created by Rohan Shad, MD"
 	)
 
-	parser.add_argument('-i', '--input_source', metavar='', required=True, help='Name of raw data dump folder on /oak/stanford/projects/genomics/labs/mfischbe')
+	parser.add_argument('-i', '--input_source', metavar='', required=True, help='Name of raw data dump folder, eg: /oak/stanford/projects/genomics/labs/mfischbe')
 	parser.add_argument('-r', '--root_dir', metavar='', required=True, help='Full path to root data directory on OAK')
 	parser.add_argument('-s', '--sample_csv', metavar='', required=True, help='Name of samples.csv file in the correct format (save this in root_dir)')
 	parser.add_argument('-f', '--build_fastqs', metavar='', required=True, default=True, help='By default assumes no fastqs are built')
@@ -306,7 +309,7 @@ if __name__ == '__main__':
 
 
 	print(f'{bcolors.OK}Jobs submitted on slurm{bcolors.END}. Type in "squeue -u your_sunet_here" to check for status')
-	print(f'Output files will be delivered to $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%d_%m_%y")}')
+	print(f'Output files will be delivered to $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}')
 	print(f'Elapsed time: {round((time.time() - start_time), 2)}s')
 
 
