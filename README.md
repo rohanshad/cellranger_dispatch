@@ -48,23 +48,14 @@ These installation steps need to be done once.
 
 #### Running cellranger_dispatch
 
-The program copies over data from an ***input_source*** (Usually a folder within `"/oak/stanford/projects/genomics/labs/mfischbe"` if using Stanford's genome sequencing service center) into our own `$OAK` or `$GROUP_SCRATCH` directory of choice (***root_dir***). There after passing some checks and reading in the provided samples.csv file, the script will build FASTQ files using all available CPU cores. A separate batch submit script is generated for each sample, and dispatched to the SLURM job scheduler to run either atac or RNAseq alignment. All count matrices and job outputs are delivered to a folder on `$GROUP_SCRATCH` to a folder called `RNA_seq_outputs_{MM_DD_YY}`. ***If your data is coming demultiplexed from an external company*** make sure all the fastqs are downloaded and stored inside a folder called ```fastq_path``` within your ```input_source``` directory. Create a dummy samples.csv file as such:
-
-```
-Lane,Sample,Index
-null,M11_Root,null
-null,M11_Arch,null
-null,M11_ASC,null 
-```
-
-Lane and Index can be whatever, but Sample must be the sample names used to identify the FASTQ files. For a FASTQ file called ```MF-LDS-ASC_S1_L004_I1_001.fastq.gz```, the sample name would thus be ```MF-LDS-ASC```
+The program copies over data from an ***input_source*** (Usually a folder within `"/oak/stanford/projects/genomics/labs/mfischbe"` if using Stanford's genome sequencing service center) into our own `$OAK` or `$GROUP_SCRATCH` directory of choice (***root_dir***). There after passing some checks and reading in the provided samples.csv file, the script will build FASTQ files using all available CPU cores. A separate batch submit script is generated for each sample, and dispatched to the SLURM job scheduler to run either atac or RNAseq alignment. All count matrices and job outputs are delivered to a folder on `$GROUP_SCRATCH` to a folder called `RNA_seq_outputs_{MM_DD_YY}`. If you don't have raw data coming from a separate input source (ie. sequencing core) then you won't need to set the ```-i``` flag.
 
 The program takes requires the following arguments to run (```python cellranger_dispatch.py --help``` to see more)
 
 ```
   -i , --input_source   Name of raw data dump folder, for example: /oak/stanford/projects/genomics/labs/mfischbe
   -r , --root_dir       Full path to new data directory on $OAK or $GROUP_SCRATCH
-  -s , --sample_csv     Name of samples.csv file in the correct format
+  -s , --sample_csv     Full path of of samples.csv file in the correct format
   -f , --build_fastqs		By default assumes fastqs are not avaialble and will generate fastqs from bcl files
   -g , --genome         Name of the genome eg: refdata-cellranger-mm10-3.0.0
   -t , --task           set as either "rna" or "atac"
@@ -92,6 +83,35 @@ The program takes requires the following arguments to run (```python cellranger_
 	```
 
 The program can resume from where it was interrupted, whether while copying data over to a new directory, or while building FASTQ files. Re-run the command and let it do it's work. This should work 95% of the time straight out of the box with minimal tinkering. If it doesn't then debugging will be fun. 
+
+#### What if you already have fastqs available? 
+
+The script has a flag ```-f``` that when set to ```False``` will skip the creation of FASTQ files. You would follow all the same steps as above (ie. salloc to get yourself onto a compute node with 12 cores). The only caveat is that you need to set up your root folder in the right format. 
+
+***If your data is coming demultiplexed from an external company*** make sure all the fastqs are downloaded and stored inside a folder called ```fastq_path``` within your ```root_dir``` directory. Create a dummy samples.csv file as such:
+
+```
+Lane,Sample,Index
+null,M11_Root,null
+null,M11_Arch,null
+null,M11_ASC,null 
+```
+
+Lane and Index can be whatever, but Sample must be the sample names used to identify the FASTQ files. For a FASTQ file called ```MF-LDS-ASC_S1_L004_I1_001.fastq.gz```, the sample name would thus be ```MF-LDS-ASC```
+Make sure your root folder has a folder called 'fastq_path'  that contains all the fastqs you recieved from the sequencing company. Keep your samples.csv here too. On sherlock you can keep this all on $OAK without issue:
+
+```
+├── fastq_path
+			├── MFS_Neg_S8_L004_I1_001.fastq.gz
+			├── MFS_Neg_S8_L004_I2_001.fastq.gz
+			├── MFS_Neg_S8_L004_R1_001.fastq.gz
+			├── MFS_Neg_S8_L004_R2_001.fastq.gz
+├── samples.csv
+
+```
+
+
+
 
 
 #### Debugging:

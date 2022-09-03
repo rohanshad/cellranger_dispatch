@@ -22,7 +22,7 @@ class RNA_Pipeline_Run:
 		#self.root_dir = os.path.join('/oak/stanford/groups/willhies/rna_seq_rawdata', root)
 		self.input_dir = input_dir
 		self.root_dir = root
-		self.sample_csv_file = os.path.join(os.getcwd(),sample_csv_file)
+		self.sample_csv_file = sample_csv_file
 		self.build_fastqs = build_fastqs
 		self.task = task
 		self.genome = os.path.join('$OAK/ref_genomes', genome)
@@ -191,6 +191,8 @@ class RNA_Pipeline_Run:
 		print(f'{bcolors.BLUE}This will take a while, grab a redbull or something...{bcolors.ENDC}')
 
 		os.makedirs(self.root_dir, exist_ok=True)
+		subprocess.call(f'ml system rclone && rclone copy {self.input_dir} {self.root_dir} -P --stats-one-line --transfers=12', shell=True)
+		print(f"Failsafe rsync if rclone copy didn't work:")
 		subprocess.run('rsync -azhv {src}/ {dest} --info=progress2 --info=name0'.format(src=self.input_dir, dest=self.root_dir), shell=True)
 
 		print(f'Copying complete, elapsed time: {round((time.time() - start_time), 2)}s')
@@ -236,8 +238,9 @@ class RNA_Pipeline_Run:
 				print(os.path.join(self.root_dir, "fastq_path"))
 				print(f'{bcolors.OK}Fastqs available!{bcolors.ENDC}')
 				
-				#os.makedirs(os.path.join(self.root_dir, self.mkfastq_dir, "outs"))
-				subprocess.call(f'rsync -azhv {os.path.join(self.root_dir, "fastq_path")} {os.path.join(self.root_dir, self.mkfastq_dir, "outs", "fastq_path")}', shell=True)
+				subprocess.call(f'ml system rclone && rclone copy {os.path.join(self.root_dir, "fastq_path")} {os.path.join(self.root_dir, self.mkfastq_dir, "outs", "fastq_path")} -P --stats-one-line --transfers=12', shell=True)
+				print(f"Failsafe rsync if rclone copy didn't work:")
+				subprocess.call(f'rsync -azhv {os.path.join(self.root_dir, "fastq_path")} {os.path.join(self.root_dir, self.mkfastq_dir, "outs")} --info=progress2 --info=name0', shell=True)
 			else:
 				print(f'{bcolors.OK}No fastqs avaialble in {os.path.join(root_dir,"fastq_path")},{bcolors.ENDC}')
 
@@ -277,7 +280,7 @@ if __name__ == '__main__':
 		epilog="Version 1.0; Created by Rohan Shad, MD"
 	)
 
-	parser.add_argument('-i', '--input_source', metavar='', required=True, help='Name of raw data dump folder, eg: /oak/stanford/projects/genomics/labs/mfischbe')
+	parser.add_argument('-i', '--input_source', metavar='', required=False, help='Name of raw data dump folder if avaialble, eg: /oak/stanford/projects/genomics/labs/mfischbe')
 	parser.add_argument('-r', '--root_dir', metavar='', required=True, help='Full path to root data directory on OAK')
 	parser.add_argument('-s', '--sample_csv', metavar='', required=True, help='Name of samples.csv file in the correct format (save this in root_dir)')
 	parser.add_argument('-f', '--build_fastqs', metavar='', required=True, default=True, help='By default assumes no fastqs are built')
