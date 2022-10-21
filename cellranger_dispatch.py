@@ -44,10 +44,9 @@ class RNA_Pipeline_Run:
 		''')
 		
 		cellranger_cmd = 'cellranger-atac count --id={sample}' \
-				' --transcriptome={genome}' \
+				' --reference={genome}' \
 				' --fastqs={fastqs}' \
-				' --sample={sample}' \
-				' --expect-cells=10000'.format(alex_dalal_tutorial_se│···?q
+				' --sample={sample}'.format(
 					sample = sample,
 					genome = self.genome,
 					fastqs = os.path.join(self.root_dir,self.mkfastq_dir,'outs','fastq_path')
@@ -64,7 +63,7 @@ class RNA_Pipeline_Run:
 			''')
 			
 		run_command = formatting_bs + cellranger_cmd + copy_outputs	
-		return cellranger_cmd
+		return run_command
 
 	def run_cellranger_count(self, sample, genome):
 		'''
@@ -115,7 +114,7 @@ class RNA_Pipeline_Run:
 			#!/bin/bash
 			#SBATCH --job-name={sample}
 			#SBATCH --output={sample}.log
-			#SBATCH --mail-user=rshad@stanford.edu
+			##SBATCH --mail-user=rshad@stanford.edu
 			#SBATCH --mail-type=end
 
 			# Time limits 
@@ -135,7 +134,7 @@ class RNA_Pipeline_Run:
 				run_command = self.run_cellranger_count(sample, self.genome)
 
 			elif task == 'atac':
-				run_command = self.run_cellranger_atac_count(sample+'_atac', self.genome)
+				run_command = self.run_cellranger_atac_count(sample, self.genome)
 
 
 			file_path = os.path.join(self.root_dir, 'startup_generator', sample, 'submit.sh')
@@ -156,10 +155,11 @@ class RNA_Pipeline_Run:
 
 
 	def master_run(self):
-		submit_files = glob.glob(os.path.join(self.root_dir, 'startup_generator','*','*.sh'))
-		for i in submit_files:
-			print(f'Job for {(i.split("startup_generator/"))[1].split("/submit.sh")[0]}:')
-			subprocess.run('sbatch {file}'.format(file=i), shell=True)
+		#submit_files = glob.glob(os.path.join(self.root_dir, 'startup_generator','*','*.sh'))
+		sample_df = pd.read_csv(self.sample_csv_file)
+		for i in sample_df['Sample']:
+			print(f'Job for {i}:')
+			subprocess.run('sbatch {file}'.format(file=os.path.join(self.root_dir, 'startup_generator', i, 'submit.sh')), shell=True)
 
 
 	def untar_files(self):
