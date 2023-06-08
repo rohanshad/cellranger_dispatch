@@ -16,10 +16,11 @@ import sys
 import textwrap
 
 class RNA_Pipeline_Run:
-	def __init__(self, input_dir, root, sample_csv_file, build_fastqs, task, genome, debug):
+	def __init__(self, input_dir, root, sample_csv_file, build_fastqs, task, genome, nosecondary, debug):
 
 		#self.input_dir = os.path.join('/oak/stanford/projects/genomics/labs/mfischbe', input_dir)
 		#self.root_dir = os.path.join('/oak/stanford/groups/willhies/rna_seq_rawdata', root)
+		self.nosecondary = nosecondary
 		self.input_dir = input_dir
 		self.root_dir = root
 		self.sample_csv_file = sample_csv_file
@@ -77,29 +78,55 @@ class RNA_Pipeline_Run:
 		echo "Running in L_SCRATCH"	
 		''')
 		
-		cellranger_cmd = 'cellranger count --id={sample}' \
-				' --transcriptome={genome}' \
-				' --fastqs={fastqs}' \
-				' --sample={sample}' \
-				' --expect-cells=10000'.format(
-					sample = sample,
-					genome = self.genome,
-					fastqs = os.path.join(self.root_dir, self.mkfastq_dir,'outs','fastq_path')
-					)
-		copy_outputs = textwrap.dedent(f'''\
-			
-			
-			#L_SCRATCH wil purge everything from memory as soon as job ends, this step copies everything back to GROUP_SCRATCH
+		if self.nosecondary == True:
+			cellranger_cmd = 'cellranger count --id={sample}' \
+					' --transcriptome={genome}' \
+					' --fastqs={fastqs}' \
+					' --sample={sample}' \
+					' --nosecondary' \
+					' --expect-cells=10000'.format(
+						sample = sample,
+						genome = self.genome,
+						fastqs = os.path.join(self.root_dir, self.mkfastq_dir,'outs','fastq_path')
+						)
+			copy_outputs = textwrap.dedent(f'''\
+				
+				
+				#L_SCRATCH wil purge everything from memory as soon as job ends, this step copies everything back to GROUP_SCRATCH
 
-			echo "Copying back to GROUP_SCRATCH"
+				echo "Copying back to GROUP_SCRATCH"
 
-			mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
-			cp -r $L_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+				mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+				cp -r $L_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
 
-			echo "Job copied, waiting 10s to terminate..."
+				echo "Job copied, waiting 10s to terminate..."
 
-			sleep 10
-			''')
+				sleep 10
+				''')
+		else:
+			cellranger_cmd = 'cellranger count --id={sample}' \
+					' --transcriptome={genome}' \
+					' --fastqs={fastqs}' \
+					' --sample={sample}' \
+					' --expect-cells=10000'.format(
+						sample = sample,
+						genome = self.genome,
+						fastqs = os.path.join(self.root_dir, self.mkfastq_dir,'outs','fastq_path')
+						)
+			copy_outputs = textwrap.dedent(f'''\
+				
+				
+				#L_SCRATCH wil purge everything from memory as soon as job ends, this step copies everything back to GROUP_SCRATCH
+
+				echo "Copying back to GROUP_SCRATCH"
+
+				mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+				cp -r $L_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+
+				echo "Job copied, waiting 10s to terminate..."
+
+				sleep 10
+				''')
 		run_command = formatting_bs + cellranger_cmd + copy_outputs	
 		return run_command
 
@@ -118,7 +145,7 @@ class RNA_Pipeline_Run:
 			#SBATCH --mail-type=end
 
 			# Time limits 
-			#SBATCH -t 24:00:00
+			#SBATCH -t 36:00:00
 
 			# Partition info
 			#SBATCH --partition=owners,willhies
@@ -287,6 +314,7 @@ if __name__ == '__main__':
 	parser.add_argument('-g', '--genome', metavar='', required=True, help='Name of the genome eg: refdata-cellranger-mm10-3.0.0')
 	parser.add_argument('-t', '--task', metavar='', required=True, help='set as either "rna" or "atac"')
 	parser.add_argument('-d', '--debug', metavar='', required=False, default=False)
+	parser.add_argument('--nosecondary', metavar='', required=False, default=False)
 
 	args = vars(parser.parse_args())
 	print(args)
@@ -299,11 +327,12 @@ if __name__ == '__main__':
 	task = args['task']
 	debug = args['debug']
 	build_fastqs = args['build_fastqs']
+	nosecondary = args['nosecondary']
 
 	print(f'Using genome: {bcolors.BLUE}{genome}{bcolors.END}')
 	print(f'Processing experiment: {bcolors.BLUE}{task}{bcolors.END}')
 
-	rna_pipe = RNA_Pipeline_Run(input_dir, root_dir, sample_csv, build_fastqs, task, genome, debug)
+	rna_pipe = RNA_Pipeline_Run(input_dir, root_dir, sample_csv, build_fastqs, task, genome, nosecondary, debug)
 
 	start_time = time.time()
 	
