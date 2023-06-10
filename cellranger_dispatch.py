@@ -145,7 +145,7 @@ class RNA_Pipeline_Run:
 			#SBATCH --mail-type=end
 
 			# Time limits 
-			#SBATCH -t 36:00:00
+			#SBATCH -t 72:00:00
 
 			# Partition info
 			#SBATCH --partition=owners,willhies
