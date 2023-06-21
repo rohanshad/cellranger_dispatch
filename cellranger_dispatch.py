@@ -56,6 +56,7 @@ class RNA_Pipeline_Run:
 			
 			echo "Moving to GROUP_SCRATCH"
 			mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+			cp -r $GROUP_SCRATCH/workdir/{sample} /oak/stanford/groups/willhies/fischbein_lab/cellranger_outs/RNA_atac_outputs_{date.today().strftime("%d_%m_%y")}/
 			mv $GROUP_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
 
 			echo "Job copied, waiting 10s to terminate..."
@@ -97,6 +98,7 @@ class RNA_Pipeline_Run:
 				echo "Copying back to GROUP_SCRATCH"
 
 				mkdir $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
+				cp -r $L_SCRATCH/workdir/{sample} /oak/stanford/groups/willhies/fischbein_lab/cellranger_outs/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
 				cp -r $L_SCRATCH/workdir/{sample} $GROUP_SCRATCH/RNA_seq_outputs_{date.today().strftime("%m_%d_%y")}/
 
 				echo "Job copied, waiting 10s to terminate..."
@@ -148,7 +150,7 @@ class RNA_Pipeline_Run:
 			#SBATCH -t 72:00:00
 
 			# Partition info
-			#SBATCH --partition=owners,willhies
+			#SBATCH --partition=willhies
 			#SBATCH --qos=normal
 			#SBATCH --nodes=1
 			#SBATCH --mem=72GB
