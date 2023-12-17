@@ -22,7 +22,7 @@ These installation steps need to be done once.
 	Hit 'i' in the keyboard and paste in this line:
 
 	```
-	export PATH="$GROUP_HOME/anaconda3/bin:$PATH"
+	export PATH="$GROUP_HOME/miniconda3/bin:$PATH"
 	```
 
 	Save by typing ```:wq``` in vim, this will write the changes and quit. Open a new terminal window and repeat step #1
